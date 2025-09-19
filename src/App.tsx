@@ -13,7 +13,7 @@ import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import CreatePost from "./pages/CreatePost";
-import AdminPanel from "./pages/AdminPanel";
+import AdminPanel from "./pages/admin/AdminPanel"; // Updated import path
 
 const queryClient = new QueryClient();
 
@@ -49,6 +49,31 @@ const RedirectIfAuthenticated = ({ children }: { children: React.ReactNode }) =>
   }
 
   if (user) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
+};
+
+// Admin Route Component
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" />;
+  }
+
+  // In a real app, you would check admin privileges here
+  // For demo, we'll allow access if email contains "admin"
+  if (!user.email?.includes("admin")) {
     return <Navigate to="/" />;
   }
 
@@ -132,13 +157,13 @@ const App = () => (
             } 
           />
           
-          {/* Admin Panel Route */}
+          {/* Admin Route */}
           <Route 
-            path="/admin" 
+            path="/admin/*" 
             element={
-              <ProtectedRoute>
+              <AdminRoute>
                 <AdminPanel />
-              </ProtectedRoute>
+              </AdminRoute>
             } 
           />
           

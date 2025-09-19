@@ -1,8 +1,10 @@
 // /src/pages/admin/AdminPanel.tsx
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth } from "@/lib/firebase";
-import { onAuthStateChanged, User, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
+import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext"; // Add this import
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -17,42 +19,28 @@ import {
 } from "lucide-react";
 
 const AdminPanel = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const { user } = useAuth();
+  const { isAdmin, loading } = useAdmin();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-        // Check if user is admin (in a real app, this would come from Firestore)
-        // For demo, we'll check if email contains "admin"
-        const isAdminUser = currentUser.email?.includes("admin") || false;
-        setIsAdmin(isAdminUser);
-        
-        // If not admin, redirect to home
-        if (!isAdminUser) {
-          navigate("/");
-        }
-      } else {
-        // If not logged in, redirect to login
-        navigate("/login");
-      }
-    });
-
-    return () => unsubscribe();
-  }, [navigate]);
+    if (!user && !loading) {
+      navigate("/admin/login");
+    } else if (user && !isAdmin && !loading) {
+      navigate("/");
+    }
+  }, [user, isAdmin, loading, navigate]);
 
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate("/login");
+      navigate("/admin/login");
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  if (!user) {
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -60,7 +48,7 @@ const AdminPanel = () => {
     );
   }
 
-  if (!isAdmin) {
+  if (!user || !isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="max-w-md w-full mx-4">

@@ -1,9 +1,9 @@
 // /src/pages/admin/AdminPanel.tsx
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -14,35 +14,38 @@ import {
   Settings, 
   LogOut,
   Shield,
-  AlertCircle
+  Check,
+  X
 } from "lucide-react";
+import { useState } from "react";
 
 const AdminPanel = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
-        setUser(currentUser);
-        
-        // Check if user is admin
         try {
           const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
-          if (adminDoc.exists()) {
-            setIsAdmin(true);
-          } else {
-            // Not admin - redirect to home
+          if (!adminDoc.exists()) {
             navigate("/");
+            return;
           }
+          
+          // Fetch users for admin panel
+          const usersSnapshot = await getDocs(collection(db, "users"));
+          const usersData = usersSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setUsers(usersData);
         } catch (error) {
           console.error("Error checking admin status:", error);
           navigate("/");
         }
       } else {
-        // Not logged in - redirect to admin login
         navigate("/admin/login");
       }
       setLoading(false);
@@ -60,22 +63,18 @@ const AdminPanel = () => {
     }
   };
 
+  const handleVerifyUser = async (userId: string, currentStatus: boolean) => {
+    // In a real app, you would update the user's verification status in Firestore
+    console.log(`Setting verification status for user ${userId} to ${!currentStatus}`);
+    // Implementation would go here
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
-  }
-
-  if (!user) {
-    // Already redirected to /admin/login in useEffect
-    return null;
-  }
-
-  if (!isAdmin) {
-    // Already redirected to / in useEffect
-    return null;
   }
 
   return (
@@ -89,7 +88,7 @@ const AdminPanel = () => {
             </div>
             <div className="flex items-center space-x-4">
               <div className="text-right">
-                <p className="font-medium">{user.displayName || user.email}</p>
+                <p className="font-medium">Admin User</p>
                 <p className="text-sm text-muted-foreground">Administrator</p>
               </div>
               <Button variant="outline" onClick={handleLogout}>
@@ -110,8 +109,8 @@ const AdminPanel = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">0</div>
-              <p className="text-xs text-muted-foreground">Loading...</p>
+              <div className="text-2xl font-bold">{users.length}</div>
+              <p className="text-xs text-muted-foreground">Active users</p>
             </CardContent>
           </Card>
 
@@ -134,6 +133,57 @@ const AdminPanel = () => {
             <CardContent>
               <div className="text-2xl font-bold">0</div>
               <p className="text-xs text-muted-foreground">Loading...</p>
+            </CardContent>
+          </Card>
+
+          {/* User Management */}
+          <Card className="md:col-span-2 lg:col-span-3">
+            <CardHeader>
+              <CardTitle>User Management</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {users.slice(0, 5).map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div className="flex items-center space-x-4">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={user.avatar || "/placeholder-avatar.jpg"} alt={user.username} />
+                        <AvatarFallback className="bg-gradient-primary text-white">
+                          {user.username ? user.username.slice(0, 2).toUpperCase() : "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold">{user.username || user.email}</p>
+                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        user.isVerified ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {user.isVerified ? "Verified" : "Not Verified"}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant={user.isVerified ? "outline" : "default"}
+                        onClick={() => handleVerifyUser(user.id, user.isVerified)}
+                      >
+                        {user.isVerified ? (
+                          <>
+                            <X className="h-3 w-3 mr-1" />
+                            Remove
+                          </>
+                        ) : (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Verify
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
@@ -160,18 +210,6 @@ const AdminPanel = () => {
                   <Settings className="h-6 w-6" />
                   <span>Settings</span>
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card className="md:col-span-2 lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center text-muted-foreground py-8">
-                No recent activity
               </div>
             </CardContent>
           </Card>

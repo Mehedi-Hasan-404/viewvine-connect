@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { BadgeCheck } from "lucide-react";
 import {
   Heart,
   MessageCircle,
@@ -23,16 +22,17 @@ import {
 interface PostCardProps {
   post: {
     id: string;
-    userId: string;
-    username: string;
-    userAvatar: string;
-    isVerified?: boolean;
+    user: {
+      username: string;
+      avatar: string;
+      isVerified?: boolean;
+    };
     images: string[];
     caption: string;
     location?: string;
     likes: number;
     comments: number;
-    createdAt: any;
+    timeAgo: string;
     isLiked: boolean;
     isBookmarked: boolean;
   };
@@ -79,15 +79,26 @@ const PostCard = ({ post }: PostCardProps) => {
       <div className="flex items-center justify-between p-4 pb-3">
         <div className="flex items-center space-x-3">
           <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarImage src={post.userAvatar || "/placeholder-avatar.jpg"} alt={post.username} />
+            <AvatarImage src={post.user.avatar} alt={post.user.username} />
             <AvatarFallback className="bg-gradient-primary text-white text-sm font-semibold">
-              {post.username.slice(0, 2).toUpperCase()}
+              {post.user.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex items-center space-x-1">
-            <span className="font-semibold text-sm">{post.username}</span>
-            {post.isVerified && (
-              <BadgeCheck className="h-4 w-4 text-blue-500 fill-blue-500" />
+            <span className="font-semibold text-sm">{post.user.username}</span>
+            {/* REAL SVG VERIFICATION BADGE */}
+            {post.user.isVerified && (
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                className="h-4 w-4 text-blue-500 fill-blue-500"
+              >
+                <path d="M23.954 4.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 7.5 9.03 6.265a.75.75 0 0 0-.747.06L4.46 8.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 3.431L11.28 1.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                <path d="M23.954 8.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 11.5 9.03 10.265a.75.75 0 0 0-.747.06L4.46 12.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 7.431L11.28 5.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                <path d="M23.954 12.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 15.5 9.03 14.265a.75.75 0 0 0-.747.06L4.46 16.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 11.431L11.28 9.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                <path d="M23.954 16.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 19.5 9.03 18.265a.75.75 0 0 0-.747.06L4.46 20.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 15.431L11.28 13.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                <path d="M23.954 20.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 23.5 9.03 22.265a.75.75 0 0 0-.747.06L4.46 24.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 19.431L11.28 17.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+              </svg>
             )}
           </div>
           {post.location && (
@@ -197,7 +208,7 @@ const PostCard = ({ post }: PostCardProps) => {
 
         {/* Caption */}
         <div className="text-sm mb-2">
-          <span className="font-semibold mr-2">{post.username}</span>
+          <span className="font-semibold mr-2">{post.user.username}</span>
           {post.caption}
         </div>
 
@@ -209,11 +220,7 @@ const PostCard = ({ post }: PostCardProps) => {
         )}
 
         {/* Time */}
-        <div className="text-xs text-muted-foreground mb-3">
-          {post.createdAt?.toDate ? 
-            new Date(post.createdAt.toDate()).toLocaleDateString() : 
-            "Just now"}
-        </div>
+        <div className="text-xs text-muted-foreground mb-3">{post.timeAgo}</div>
 
         {/* Add Comment */}
         <div className="flex items-center space-x-3 border-t pt-3">

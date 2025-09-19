@@ -1,7 +1,8 @@
+// /src/pages/NotFound.tsx
 import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import pixelShareLogo from "@/assets/pixelshare-logo.png";
+import socialLensLogo from "@/assets/sociallens-logo.png";
 
 const NotFound = () => {
   const location = useLocation();
@@ -15,8 +16,8 @@ const NotFound = () => {
       <div className="text-center max-w-md mx-auto p-6">
         <div className="mb-8">
           <img 
-            src={pixelShareLogo} 
-            alt="PixelShare" 
+            src={socialLensLogo} 
+            alt="SocialLens" 
             className="h-16 w-16 mx-auto mb-4 opacity-60"
           />
           <h1 className="text-6xl font-bold gradient-text mb-4">404</h1>

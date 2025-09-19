@@ -4,3 +4,8 @@
   "installCommand": "npm install",
   "routes": [
     {
+      "src": "/(.*)",
+      "dest": "/dist/index.html"
+    }
+  ]
+}

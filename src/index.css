@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* PixelShare Design System - Beautiful gradients and modern colors */
+/* SocialLens Design System - Modern social media platform */
 
 @layer base {
   :root {
@@ -18,10 +18,10 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    /* Primary brand colors - purple to pink gradient */
-    --primary: 262 83% 58%;
+    /* Primary brand colors - Blue to purple gradient theme */
+    --primary: 244 71% 65%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 310 80% 70%;
+    --primary-glow: 264 83% 74%;
 
     /* Secondary colors */
     --secondary: 240 4.8% 95.9%;
@@ -42,14 +42,14 @@
     /* Borders and inputs */
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 262 83% 58%;
+    --ring: 244 71% 65%;
 
     /* Border radius */
     --radius: 0.75rem;
 
-    /* Custom PixelShare gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-hero: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #06B6D4 100%);
+    /* SocialLens custom gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(244 71% 65%) 0%, hsl(264 83% 74%) 50%, hsl(284 90% 70%) 100%);
+    --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(240 4.8% 97.9%) 100%);
 
     /* Shadows with brand colors */
@@ -92,9 +92,9 @@
     --popover-foreground: 0 0% 98%;
 
     /* Dark mode primary - keep brand colors bright */
-    --primary: 262 83% 58%;
+    --primary: 244 71% 65%;
     --primary-foreground: 0 0% 98%;
-    --primary-glow: 310 80% 70%;
+    --primary-glow: 264 83% 74%;
 
     /* Dark mode secondary */
     --secondary: 240 3.7% 15.9%;
@@ -115,10 +115,10 @@
     /* Dark mode borders */
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 262 83% 58%;
+    --ring: 244 71% 65%;
 
     /* Dark mode gradients */
-    --gradient-hero: linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #06B6D4 100%);
+    --gradient-hero: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
     --gradient-subtle: linear-gradient(180deg, hsl(var(--background)) 0%, hsl(240 3.7% 5.9%) 100%);
 
     /* Dark mode shadows */

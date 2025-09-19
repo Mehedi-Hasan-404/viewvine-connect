@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
-import pixelShareLogo from "@/assets/pixelshare-logo.png";
+import socialLensLogo from "@/assets/sociallens-logo.png";
 import heroBg from "@/assets/hero-bg.png";
 
 interface AuthProps {
@@ -53,15 +53,15 @@ const Auth = ({ mode }: AuthProps) => {
             {/* Logo */}
             <div className="flex justify-center">
               <img 
-                src={pixelShareLogo} 
-                alt="PixelShare" 
+                src={socialLensLogo} 
+                alt="SocialLens" 
                 className="h-16 w-16 animate-pulse-glow"
               />
             </div>
             
             <div>
               <CardTitle className="text-2xl gradient-text">
-                {mode === "login" ? "Welcome back" : "Join PixelShare"}
+                {mode === "login" ? "Welcome back" : "Join SocialLens"}
               </CardTitle>
               <CardDescription className="text-muted-foreground">
                 {mode === "login" 

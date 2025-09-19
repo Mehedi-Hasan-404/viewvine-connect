@@ -1,9 +1,10 @@
+// /src/components/Layout.tsx
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 import { 
   Home, 
   Search, 
@@ -22,27 +23,34 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 import socialLensLogo from "@/assets/sociallens-logo.png";
 
-interface LayoutProps {
-  children: React.ReactNode;
-}
-
-const Layout = ({ children }: LayoutProps) => {
+const Layout = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation();
+  const { user } = useAuth();
   const [notifications] = useState(3); // Mock notification count
   const [searchQuery, setSearchQuery] = useState("");
 
   const bottomNavItems = [
     { path: "/", icon: Home, label: "Home" },
     { path: "/explore", icon: Compass, label: "Explore" },
+    { path: "/messages", icon: MessageCircle, label: "Messages" },
     { path: "/profile", icon: User, label: "Profile" },
   ];
 
   const isActive = (path: string) => location.pathname === path;
 
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-subtle pb-20">
+    <div className="min-h-screen bg-gradient-subtle pb-16">
       {/* Top Navigation - Only Logo, Search, Messages, Notifications */}
       <header className="sticky top-0 z-50 border-b border-border/20 bg-background/95 backdrop-blur-xl supports-[backdrop-filter]:bg-background/80">
         <div className="container mx-auto px-4">
@@ -100,12 +108,9 @@ const Layout = ({ children }: LayoutProps) => {
                 >
                   <Heart className="h-6 w-6" />
                   {notifications > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs flex items-center justify-center animate-pulse-glow border-2 border-background"
-                    >
+                    <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center animate-pulse-glow border-2 border-background">
                       {notifications}
-                    </Badge>
+                    </div>
                   )}
                 </Button>
               </div>
@@ -115,9 +120,9 @@ const Layout = ({ children }: LayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-8 w-8 rounded-full p-0">
                     <Avatar className="h-8 w-8 ring-2 ring-primary/20 hover:ring-primary/50 transition-all duration-200">
-                      <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                      <AvatarImage src={user.photoURL || "/placeholder-avatar.jpg"} alt="Profile" />
                       <AvatarFallback className="bg-gradient-primary text-white font-semibold text-sm">
-                        SL
+                        {user.displayName ? user.displayName.charAt(0) : "U"}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -125,15 +130,18 @@ const Layout = ({ children }: LayoutProps) => {
                 <DropdownMenuContent className="w-56 bg-background/95 backdrop-blur-xl border border-border/50" align="end" forceMount>
                   <div className="flex items-center justify-start gap-3 p-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder-avatar.jpg" alt="Profile" />
+                      <AvatarImage src={user.photoURL || "/placeholder-avatar.jpg"} alt="Profile" />
                       <AvatarFallback className="bg-gradient-primary text-white font-semibold">
-                        SL
+                        {user.displayName ? user.displayName.charAt(0) : "U"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">@socialuser</p>
+                      <div className="flex items-center space-x-1">
+                        <p className="font-medium">{user.displayName || user.email}</p>
+                        <BadgeCheck className="h-4 w-4 text-blue-500 fill-blue-500" />
+                      </div>
                       <p className="w-[180px] truncate text-sm text-muted-foreground">
-                        John Doe
+                        {user.email}
                       </p>
                     </div>
                   </div>
@@ -165,7 +173,7 @@ const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - Fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border/20 z-40">
         <div className="container mx-auto px-4">
           <nav className="flex items-center justify-around py-3">
@@ -190,7 +198,7 @@ const Layout = ({ children }: LayoutProps) => {
             ))}
             
             {/* Create Post Button - Special styling */}
-            <div className="flex flex-col items-center group">
+            <Link to="/create" className="flex flex-col items-center group">
               <Button
                 variant="default"
                 size="icon"
@@ -200,7 +208,7 @@ const Layout = ({ children }: LayoutProps) => {
                 <PlusSquare className="h-6 w-6 text-white" />
               </Button>
               <span className="text-xs mt-1 text-primary font-medium">Create</span>
-            </div>
+            </Link>
           </nav>
         </div>
       </div>

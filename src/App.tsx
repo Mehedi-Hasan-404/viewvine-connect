@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useAdmin } from "@/context/AdminContext"; // Add this import
 import Layout from "./components/Layout";
 import Feed from "./pages/Feed";
 import Profile from "./pages/Profile";
@@ -13,7 +14,8 @@ import Messages from "./pages/Messages";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import CreatePost from "./pages/CreatePost";
-import AdminPanel from "./pages/admin/AdminPanel"; // Updated import path
+import AdminPanel from "./pages/admin/AdminPanel";
+import AdminLogin from "./pages/admin/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -55,11 +57,12 @@ const RedirectIfAuthenticated = ({ children }: { children: React.ReactNode }) =>
   return <>{children}</>;
 };
 
-// Admin Route Component
+// Admin Route Component - now uses proper admin checking
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
 
-  if (loading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -68,12 +71,10 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/admin/login" />;
   }
 
-  // In a real app, you would check admin privileges here
-  // For demo, we'll allow access if email contains "admin"
-  if (!user.email?.includes("admin")) {
+  if (!isAdmin) {
     return <Navigate to="/" />;
   }
 
@@ -103,6 +104,12 @@ const App = () => (
                 <Auth mode="signup" />
               </RedirectIfAuthenticated>
             } 
+          />
+          
+          {/* Admin Auth Routes */}
+          <Route 
+            path="/admin/login" 
+            element={<AdminLogin />} 
           />
           
           {/* Protected Routes */}

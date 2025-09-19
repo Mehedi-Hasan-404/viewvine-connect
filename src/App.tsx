@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import CreatePost from "./pages/CreatePost";
 import AdminPanel from "./pages/admin/AdminPanel";
 import AdminLogin from "./pages/admin/Login";
+import Reels from "./pages/Reels";
 
 const queryClient = new QueryClient();
 
@@ -34,9 +35,10 @@ const App = () => (
           
           {/* Protected Main Routes */}
           <Route path="/" element={<Layout><Feed /></Layout>} />
-          <Route path="/profile" element={<Layout><Profile /></Layout>} />
           <Route path="/explore" element={<Layout><Explore /></Layout>} />
+          <Route path="/reels" element={<Layout><Reels /></Layout>} />
           <Route path="/messages" element={<Layout><Messages /></Layout>} />
+          <Route path="/profile" element={<Layout><Profile /></Layout>} />
           <Route path="/create" element={<Layout><CreatePost /></Layout>} />
           
           {/* Catch-all route */}

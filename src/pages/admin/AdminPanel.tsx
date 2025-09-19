@@ -1,10 +1,9 @@
 // /src/pages/admin/AdminPanel.tsx
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { auth } from "@/lib/firebase";
-import { signOut } from "firebase/auth";
-import { useAuth } from "@/context/AuthContext";
-import { useAdmin } from "@/context/AdminContext"; // Add this import
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -19,17 +18,38 @@ import {
 } from "lucide-react";
 
 const AdminPanel = () => {
-  const { user } = useAuth();
-  const { isAdmin, loading } = useAdmin();
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!user && !loading) {
-      navigate("/admin/login");
-    } else if (user && !isAdmin && !loading) {
-      navigate("/");
-    }
-  }, [user, isAdmin, loading, navigate]);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        
+        // Check if user is admin
+        try {
+          const adminDoc = await getDoc(doc(db, "admins", currentUser.uid));
+          if (adminDoc.exists()) {
+            setIsAdmin(true);
+          } else {
+            // Not admin - redirect to home
+            navigate("/");
+          }
+        } catch (error) {
+          console.error("Error checking admin status:", error);
+          navigate("/");
+        }
+      } else {
+        // Not logged in - redirect to admin login
+        navigate("/admin/login");
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [navigate]);
 
   const handleLogout = async () => {
     try {
@@ -48,27 +68,14 @@ const AdminPanel = () => {
     );
   }
 
-  if (!user || !isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="max-w-md w-full mx-4">
-          <CardHeader>
-            <div className="flex items-center justify-center mb-4">
-              <AlertCircle className="h-12 w-12 text-destructive" />
-            </div>
-            <CardTitle className="text-center">Access Denied</CardTitle>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-muted-foreground mb-4">
-              You don't have permission to access the admin panel.
-            </p>
-            <Button onClick={() => navigate("/")}>
-              Return to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (!user) {
+    // Already redirected to /admin/login in useEffect
+    return null;
+  }
+
+  if (!isAdmin) {
+    // Already redirected to / in useEffect
+    return null;
   }
 
   return (

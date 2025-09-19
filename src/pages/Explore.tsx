@@ -1,5 +1,5 @@
 // /src/pages/Explore.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,13 +13,63 @@ import {
   MessageCircle,
   Hash,
   UserPlus,
+  SearchIcon,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const Explore = () => {
   const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [trendingHashtags, setTrendingHashtags] = useState<any[]>([]);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+
+  // Fetch data from Firestore
+  useEffect(() => {
+    if (!user) return;
+
+    setLoading(true);
+    
+    // Fetch trending hashtags (in a real app)
+    const hashtagsUnsubscribe = onSnapshot(
+      query(collection(db, "hashtags"), orderBy("count", "desc"), limit(10)),
+      (snapshot) => {
+        const hashtags = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setTrendingHashtags(hashtags);
+      },
+      (error) => {
+        console.error("Error fetching hashtags:", error);
+      }
+    );
+
+    // Fetch suggested users (in a real app)
+    const usersUnsubscribe = onSnapshot(
+      query(collection(db, "users"), limit(10)),
+      (snapshot) => {
+        const users = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setSuggestedUsers(users);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Error fetching users:", error);
+        setLoading(false);
+      }
+    );
+
+    return () => {
+      hashtagsUnsubscribe();
+      usersUnsubscribe();
+    };
+  }, [user]);
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -31,19 +81,29 @@ const Explore = () => {
     return num.toString();
   };
 
-  const handleFollow = (username: string) => {
+  const handleFollow = (userId: string) => {
     setFollowedUsers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(username)) {
-        newSet.delete(username);
+      if (newSet.has(userId)) {
+        newSet.delete(userId);
       } else {
-        newSet.add(username);
+        newSet.add(userId);
       }
       return newSet;
     });
+    
+    // In a real app, you would update Firestore here
   };
 
   if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -74,16 +134,17 @@ const Explore = () => {
           {/* Explore Content */}
           <Card className="border-0 shadow-elegant bg-card/80 backdrop-blur-sm">
             <CardContent className="p-8 text-center">
-              <div className="text-5xl mb-4">🔍</div>
+              <SearchIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Discover Amazing Content</h3>
               <p className="text-muted-foreground mb-4">
                 Search for hashtags, users, or locations to explore
               </p>
               <div className="flex flex-wrap justify-center gap-2 mt-4">
-                <Button variant="outline" size="sm">#photography</Button>
-                <Button variant="outline" size="sm">#travel</Button>
-                <Button variant="outline" size="sm">#food</Button>
-                <Button variant="outline" size="sm">#nature</Button>
+                {trendingHashtags.slice(0, 4).map((hashtag) => (
+                  <Button key={hashtag.id} variant="outline" size="sm">
+                    #{hashtag.tag}
+                  </Button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -99,28 +160,28 @@ const Explore = () => {
                 <h3 className="font-semibold">Trending</h3>
               </div>
               <div className="space-y-3">
-                {[
-                  { tag: "photography", posts: 2400000 },
-                  { tag: "sunset", posts: 1800000 },
-                  { tag: "coffee", posts: 1200000 },
-                  { tag: "travel", posts: 3200000 },
-                  { tag: "nature", posts: 2800000 },
-                ].map((hashtag, index) => (
-                  <button
-                    key={hashtag.tag}
-                    className="flex items-center justify-between w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg font-medium text-muted-foreground">#{index + 1}</span>
-                      <div>
-                        <div className="font-medium">#{hashtag.tag}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {formatNumber(hashtag.posts)} posts
+                {trendingHashtags.length > 0 ? (
+                  trendingHashtags.map((hashtag, index) => (
+                    <button
+                      key={hashtag.id}
+                      className="flex items-center justify-between w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <span className="text-lg font-medium text-muted-foreground">#{index + 1}</span>
+                        <div>
+                          <div className="font-medium">#{hashtag.tag}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatNumber(hashtag.count || 0)} posts
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    No trending hashtags yet
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -130,53 +191,63 @@ const Explore = () => {
             <CardContent className="p-4">
               <h3 className="font-semibold mb-4">Suggested for you</h3>
               <div className="space-y-4">
-                {[
-                  { username: "alex_photos", fullName: "Alex Johnson", avatar: "/placeholder-avatar.jpg", isVerified: true, followers: 45600 },
-                  { username: "travel_diary", fullName: "Sarah Travel", avatar: "/placeholder-avatar.jpg", isVerified: false, followers: 23400 },
-                  { username: "foodie_life", fullName: "Food Lover", avatar: "/placeholder-avatar.jpg", isVerified: true, followers: 78900 },
-                  { username: "art_gallery", fullName: "Digital Art", avatar: "/placeholder-avatar.jpg", isVerified: false, followers: 12300 },
-                ].map((user) => (
-                  <div key={user.username} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                        <AvatarImage src={user.avatar} alt={user.username} />
-                        <AvatarFallback className="bg-gradient-primary text-white text-sm">
-                          {user.username.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-1">
-                          <p className="text-sm font-semibold truncate">{user.username}</p>
-                          {user.isVerified && (
-                            <BadgeCheck className="h-3 w-3 text-blue-500 fill-blue-500" />
-                          )}
+                {suggestedUsers.length > 0 ? (
+                  suggestedUsers.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                          <AvatarImage 
+                            src={user.avatar || "/placeholder-avatar.jpg"} 
+                            alt={user.username || "User"} 
+                          />
+                          <AvatarFallback className="bg-gradient-primary text-white text-sm">
+                            {user.username 
+                              ? user.username.slice(0, 2).toUpperCase()
+                              : "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-1">
+                            <p className="text-sm font-semibold truncate">
+                              {user.username || "User"}
+                            </p>
+                            {user.isVerified && (
+                              <BadgeCheck className="h-3 w-3 text-blue-500 fill-blue-500" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.fullName || "SocialLens User"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatNumber(user.followers || 0)} followers
+                          </p>
                         </div>
-                        <p className="text-xs text-muted-foreground truncate">{user.fullName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatNumber(user.followers)} followers
-                        </p>
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleFollow(user.id)}
+                        className={`transition-all duration-300 ${
+                          followedUsers.has(user.id)
+                            ? "bg-muted text-foreground hover:bg-muted/80"
+                            : "bg-gradient-primary hover:opacity-90 text-white"
+                        }`}
+                      >
+                        {followedUsers.has(user.id) ? (
+                          "Following"
+                        ) : (
+                          <>
+                            <UserPlus className="h-3 w-3 mr-1" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => handleFollow(user.username)}
-                      className={`transition-all duration-300 ${
-                        followedUsers.has(user.username)
-                          ? "bg-muted text-foreground hover:bg-muted/80"
-                          : "bg-gradient-primary hover:opacity-90 text-white"
-                      }`}
-                    >
-                      {followedUsers.has(user.username) ? (
-                        "Following"
-                      ) : (
-                        <>
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Follow
-                        </>
-                      )}
-                    </Button>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground py-4">
+                    No suggested users yet
                   </div>
-                ))}
+                )}
               </div>
             </CardContent>
           </Card>

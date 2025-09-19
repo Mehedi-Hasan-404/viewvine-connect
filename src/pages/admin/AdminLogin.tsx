@@ -2,7 +2,8 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,15 +36,17 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      // Sign in admin user
+      // Sign in user
       const userCredential = await signInWithEmailAndPassword(
         auth, 
         formData.email, 
         formData.password
       );
       
-      // Check if user is admin (email must contain "admin")
-      if (!userCredential.user.email?.includes("admin")) {
+      // Check if user is admin by checking Firestore
+      const adminDoc = await getDoc(doc(db, "admins", userCredential.user.uid));
+      
+      if (!adminDoc.exists()) {
         // Sign out if not admin
         await auth.signOut();
         setError("Access denied. Admin privileges required.");

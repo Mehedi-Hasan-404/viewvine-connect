@@ -1,9 +1,10 @@
+// /src/components/PostCard.tsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { BadgeCheck } from "lucide-react";
 import {
   Heart,
   MessageCircle,
@@ -22,17 +23,16 @@ import {
 interface PostCardProps {
   post: {
     id: string;
-    user: {
-      username: string;
-      avatar: string;
-      isVerified?: boolean;
-    };
+    userId: string;
+    username: string;
+    userAvatar: string;
+    isVerified?: boolean;
     images: string[];
     caption: string;
     location?: string;
     likes: number;
     comments: number;
-    timeAgo: string;
+    createdAt: any;
     isLiked: boolean;
     isBookmarked: boolean;
   };
@@ -79,17 +79,15 @@ const PostCard = ({ post }: PostCardProps) => {
       <div className="flex items-center justify-between p-4 pb-3">
         <div className="flex items-center space-x-3">
           <Avatar className="h-8 w-8 ring-2 ring-primary/20">
-            <AvatarImage src={post.user.avatar} alt={post.user.username} />
+            <AvatarImage src={post.userAvatar || "/placeholder-avatar.jpg"} alt={post.username} />
             <AvatarFallback className="bg-gradient-primary text-white text-sm font-semibold">
-              {post.user.username.slice(0, 2).toUpperCase()}
+              {post.username.slice(0, 2).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex items-center space-x-1">
-            <span className="font-semibold text-sm">{post.user.username}</span>
-            {post.user.isVerified && (
-              <Badge variant="secondary" className="h-4 w-4 p-0 bg-primary text-white">
-                ✓
-              </Badge>
+            <span className="font-semibold text-sm">{post.username}</span>
+            {post.isVerified && (
+              <BadgeCheck className="h-4 w-4 text-blue-500 fill-blue-500" />
             )}
           </div>
           {post.location && (
@@ -199,7 +197,7 @@ const PostCard = ({ post }: PostCardProps) => {
 
         {/* Caption */}
         <div className="text-sm mb-2">
-          <span className="font-semibold mr-2">{post.user.username}</span>
+          <span className="font-semibold mr-2">{post.username}</span>
           {post.caption}
         </div>
 
@@ -211,7 +209,11 @@ const PostCard = ({ post }: PostCardProps) => {
         )}
 
         {/* Time */}
-        <div className="text-xs text-muted-foreground mb-3">{post.timeAgo}</div>
+        <div className="text-xs text-muted-foreground mb-3">
+          {post.createdAt?.toDate ? 
+            new Date(post.createdAt.toDate()).toLocaleDateString() : 
+            "Just now"}
+        </div>
 
         {/* Add Comment */}
         <div className="flex items-center space-x-3 border-t pt-3">

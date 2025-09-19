@@ -1,5 +1,8 @@
+// /src/pages/Auth.tsx
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +17,10 @@ interface AuthProps {
 }
 
 const Auth = ({ mode }: AuthProps) => {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -29,10 +35,29 @@ const Auth = ({ mode }: AuthProps) => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle authentication logic here
-    console.log("Form submitted:", formData);
+    setLoading(true);
+    setError("");
+
+    try {
+      if (mode === "signup") {
+        // Create user with email and password
+        await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        // In a real app, you would also save additional user data to Firestore
+      } else {
+        // Sign in user
+        await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      }
+      
+      // Navigate to feed after successful auth
+      navigate("/");
+    } catch (err: any) {
+      console.error("Auth error:", err);
+      setError(err.message || "An error occurred during authentication");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,6 +98,12 @@ const Auth = ({ mode }: AuthProps) => {
           </CardHeader>
 
           <CardContent className="space-y-6">
+            {error && (
+              <div className="text-destructive text-sm text-center p-2 bg-destructive/10 rounded">
+                {error}
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === "signup" && (
                 <>
@@ -131,6 +162,7 @@ const Auth = ({ mode }: AuthProps) => {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
+                    minLength={6}
                     className="pr-10 transition-all focus:shadow-primary/20 focus:shadow-md"
                   />
                   <Button
@@ -162,9 +194,16 @@ const Auth = ({ mode }: AuthProps) => {
 
               <Button
                 type="submit"
+                disabled={loading}
                 className="w-full bg-gradient-primary hover:opacity-90 transition-all duration-300 shadow-primary hover:shadow-glow"
               >
-                {mode === "login" ? "Sign In" : "Create Account"}
+                {loading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : mode === "login" ? (
+                  "Sign In"
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
 
@@ -184,6 +223,7 @@ const Auth = ({ mode }: AuthProps) => {
                 variant="outline"
                 className="w-full hover:bg-muted/50 transition-colors"
                 type="button"
+                disabled={loading}
               >
                 <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                   <path
@@ -210,6 +250,7 @@ const Auth = ({ mode }: AuthProps) => {
                 variant="outline"
                 className="w-full hover:bg-muted/50 transition-colors"
                 type="button"
+                disabled={loading}
               >
                 <svg className="mr-2 h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>

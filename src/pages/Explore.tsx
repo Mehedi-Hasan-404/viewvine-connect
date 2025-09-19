@@ -1,10 +1,9 @@
 // /src/pages/Explore.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { BadgeCheck } from "lucide-react";
 import {
   Search,
   TrendingUp,
@@ -13,63 +12,29 @@ import {
   MessageCircle,
   Hash,
   UserPlus,
-  SearchIcon,
 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import { collection, query, onSnapshot, orderBy, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+
+// Mock trending hashtags
+const trendingHashtags = [
+  { tag: "photography", posts: 2400000 },
+  { tag: "sunset", posts: 1800000 },
+  { tag: "coffee", posts: 1200000 },
+  { tag: "travel", posts: 3200000 },
+  { tag: "nature", posts: 2800000 },
+  { tag: "lifestyle", posts: 1600000 },
+];
+
+// Mock suggested users
+const suggestedUsers = [
+  { username: "alex_photos", fullName: "Alex Johnson", avatar: "/placeholder-avatar.jpg", isVerified: true, followers: 45600 },
+  { username: "travel_diary", fullName: "Sarah Travel", avatar: "/placeholder-avatar.jpg", isVerified: false, followers: 23400 },
+  { username: "foodie_life", fullName: "Food Lover", avatar: "/placeholder-avatar.jpg", isVerified: true, followers: 78900 },
+  { username: "art_gallery", fullName: "Digital Art", avatar: "/placeholder-avatar.jpg", isVerified: false, followers: 12300 },
+];
 
 const Explore = () => {
-  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
-  const [trendingHashtags, setTrendingHashtags] = useState<any[]>([]);
-  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
-
-  // Fetch data from Firestore
-  useEffect(() => {
-    if (!user) return;
-
-    setLoading(true);
-    
-    // Fetch trending hashtags (in a real app)
-    const hashtagsUnsubscribe = onSnapshot(
-      query(collection(db, "hashtags"), orderBy("count", "desc"), limit(10)),
-      (snapshot) => {
-        const hashtags = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setTrendingHashtags(hashtags);
-      },
-      (error) => {
-        console.error("Error fetching hashtags:", error);
-      }
-    );
-
-    // Fetch suggested users (in a real app)
-    const usersUnsubscribe = onSnapshot(
-      query(collection(db, "users"), limit(10)),
-      (snapshot) => {
-        const users = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setSuggestedUsers(users);
-        setLoading(false);
-      },
-      (error) => {
-        console.error("Error fetching users:", error);
-        setLoading(false);
-      }
-    );
-
-    return () => {
-      hashtagsUnsubscribe();
-      usersUnsubscribe();
-    };
-  }, [user]);
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) {
@@ -81,35 +46,17 @@ const Explore = () => {
     return num.toString();
   };
 
-  const handleFollow = (userId: string) => {
+  const handleFollow = (username: string) => {
     setFollowedUsers(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(userId)) {
-        newSet.delete(userId);
+      if (newSet.has(username)) {
+        newSet.delete(username);
       } else {
-        newSet.add(userId);
+        newSet.add(username);
       }
       return newSet;
     });
-    
-    // In a real app, you would update Firestore here
   };
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -131,23 +78,33 @@ const Explore = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-3">
-          {/* Explore Content */}
-          <Card className="border-0 shadow-elegant bg-card/80 backdrop-blur-sm">
-            <CardContent className="p-8 text-center">
-              <SearchIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Discover Amazing Content</h3>
-              <p className="text-muted-foreground mb-4">
-                Search for hashtags, users, or locations to explore
-              </p>
-              <div className="flex flex-wrap justify-center gap-2 mt-4">
-                {trendingHashtags.slice(0, 4).map((hashtag) => (
-                  <Button key={hashtag.id} variant="outline" size="sm">
-                    #{hashtag.tag}
-                  </Button>
-                ))}
+          {/* Explore Grid */}
+          <div className="grid grid-cols-3 gap-1 auto-rows-fr">
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
+              <div
+                key={i}
+                className="relative aspect-square bg-muted hover:opacity-80 transition-opacity cursor-pointer group"
+              >
+                <img
+                  src={`/placeholder-post-${i % 2 === 0 ? '1' : '2'}.png`}
+                  alt={`Explore post ${i}`}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="flex items-center space-x-4 text-white">
+                    <div className="flex items-center space-x-1">
+                      <Heart className="h-5 w-5 fill-white" />
+                      <span className="font-semibold">1.2K</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <MessageCircle className="h-5 w-5 fill-white" />
+                      <span className="font-semibold">89</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </div>
 
         {/* Sidebar */}
@@ -160,28 +117,22 @@ const Explore = () => {
                 <h3 className="font-semibold">Trending</h3>
               </div>
               <div className="space-y-3">
-                {trendingHashtags.length > 0 ? (
-                  trendingHashtags.map((hashtag, index) => (
-                    <button
-                      key={hashtag.id}
-                      className="flex items-center justify-between w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <span className="text-lg font-medium text-muted-foreground">#{index + 1}</span>
-                        <div>
-                          <div className="font-medium">#{hashtag.tag}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatNumber(hashtag.count || 0)} posts
-                          </div>
+                {trendingHashtags.map((hashtag) => (
+                  <button
+                    key={hashtag.tag}
+                    className="flex items-center justify-between w-full text-left hover:bg-muted/50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <Hash className="h-4 w-4 text-primary" />
+                      <div>
+                        <div className="font-medium">#{hashtag.tag}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {formatNumber(hashtag.posts)} posts
                         </div>
                       </div>
-                    </button>
-                  ))
-                ) : (
-                  <div className="text-center text-muted-foreground py-4">
-                    No trending hashtags yet
-                  </div>
-                )}
+                    </div>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -191,63 +142,59 @@ const Explore = () => {
             <CardContent className="p-4">
               <h3 className="font-semibold mb-4">Suggested for you</h3>
               <div className="space-y-4">
-                {suggestedUsers.length > 0 ? (
-                  suggestedUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Avatar className="h-10 w-10 ring-2 ring-primary/20">
-                          <AvatarImage 
-                            src={user.avatar || "/placeholder-avatar.jpg"} 
-                            alt={user.username || "User"} 
-                          />
-                          <AvatarFallback className="bg-gradient-primary text-white text-sm">
-                            {user.username 
-                              ? user.username.slice(0, 2).toUpperCase()
-                              : "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-1">
-                            <p className="text-sm font-semibold truncate">
-                              {user.username || "User"}
-                            </p>
-                            {user.isVerified && (
-                              <BadgeCheck className="h-3 w-3 text-blue-500 fill-blue-500" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.fullName || "SocialLens User"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {formatNumber(user.followers || 0)} followers
-                          </p>
+                {suggestedUsers.map((user) => (
+                  <div key={user.username} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10 ring-2 ring-primary/20">
+                        <AvatarImage src={user.avatar} alt={user.username} />
+                        <AvatarFallback className="bg-gradient-primary text-white text-sm">
+                          {user.username.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-1">
+                          <p className="text-sm font-semibold truncate">{user.username}</p>
+                          {/* REAL SVG VERIFICATION BADGE */}
+                          {user.isVerified && (
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              viewBox="0 0 24 24" 
+                              className="h-3 w-3 text-blue-500 fill-blue-500"
+                            >
+                              <path d="M23.954 4.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 7.5 9.03 6.265a.75.75 0 0 0-.747.06L4.46 8.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 3.431L11.28 1.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                              <path d="M23.954 8.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 11.5 9.03 10.265a.75.75 0 0 0-.747.06L4.46 12.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 7.431L11.28 5.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                              <path d="M23.954 12.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 15.5 9.03 14.265a.75.75 0 0 0-.747.06L4.46 16.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 11.431L11.28 9.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                              <path d="M23.954 16.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 19.5 9.03 18.265a.75.75 0 0 0-.747.06L4.46 20.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 15.431L11.28 13.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                              <path d="M23.954 20.569c-.029.113-.086.216-.162.301l-3.25 3.75a.75.75 0 0 1-.976.073l-3.825-2.25a.75.75 0 0 0-.747-.06L12 23.5 9.03 22.265a.75.75 0 0 0-.747.06L4.46 24.575a.75.75 0 0 1-.976-.073l-3.25-3.75A.75.75 0 0 1 .054 19.431L11.28 17.204a1 1 0 0 1 .814.092l.106.053 11.169 2.279a.75.75 0 0 1 .625.725z"/>
+                            </svg>
+                          )}
                         </div>
+                        <p className="text-xs text-muted-foreground truncate">{user.fullName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatNumber(user.followers)} followers
+                        </p>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleFollow(user.id)}
-                        className={`transition-all duration-300 ${
-                          followedUsers.has(user.id)
-                            ? "bg-muted text-foreground hover:bg-muted/80"
-                            : "bg-gradient-primary hover:opacity-90 text-white"
-                        }`}
-                      >
-                        {followedUsers.has(user.id) ? (
-                          "Following"
-                        ) : (
-                          <>
-                            <UserPlus className="h-3 w-3 mr-1" />
-                            Follow
-                          </>
-                        )}
-                      </Button>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center text-muted-foreground py-4">
-                    No suggested users yet
+                    <Button
+                      size="sm"
+                      onClick={() => handleFollow(user.username)}
+                      className={`transition-all duration-300 ${
+                        followedUsers.has(user.username)
+                          ? "bg-muted text-foreground hover:bg-muted/80"
+                          : "bg-gradient-primary hover:opacity-90 text-white"
+                      }`}
+                    >
+                      {followedUsers.has(user.username) ? (
+                        "Following"
+                      ) : (
+                        <>
+                          <UserPlus className="h-3 w-3 mr-1" />
+                          Follow
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
+                ))}
               </div>
             </CardContent>
           </Card>
